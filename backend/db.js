@@ -1,22 +1,27 @@
-const { Pool } = require('pg');
+const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-// Configuración de la conexión usando las variables del archivo .env
-const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-});
-
-// Mensaje al conectarse exitosamente (o error)
-pool.connect((err) => {
-  if (err) {
-    console.error('Error de conexión a la BD', err.stack);
-  } else {
-    console.log('✅ Base de Datos Conectada Exitosamente');
+// Configuración de Sequelize usando las variables de entorno
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
+    dialect: 'postgres',
+    port: process.env.DB_PORT,
+    logging: false, // Ponlo en true si quieres ver el SQL en la consola
   }
-});
+);
 
-module.exports = pool;
+// Probar conexión
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Conexión con Sequelize exitosa');
+  } catch (error) {
+    console.error('❌ Error conectando a la BD:', error);
+  }
+})();
+
+module.exports = sequelize;
