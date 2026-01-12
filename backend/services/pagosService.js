@@ -1,59 +1,64 @@
 // backend/services/pagosService.js
 const Pago = require('../models/Pago');
 const Cliente = require('../models/Cliente');
+const { DateTime } = require('luxon');
 
-// Función auxiliar (ahora privada del servicio)
-function sumarMeses(fecha, meses) {
-    const nuevaFecha = new Date(fecha);
-    nuevaFecha.setMonth(nuevaFecha.getMonth() + meses);
-    return nuevaFecha;
-}
+// Configuración de zona horaria
+const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
 
 const registrarPago = async (datosPago) => {
     const { cliente_id, monto, metodo_pago, cantidad_meses, reiniciar_ciclo } = datosPago;
 
-    // 1. Validaciones de negocio
     const cliente = await Cliente.findByPk(cliente_id);
     if (!cliente) {
         throw new Error("CLIENTE_NO_ENCONTRADO");
     }
 
-    // 2. Cálculo de fechas (La lógica heavy)
-    const fechaActual = new Date();
-    let fechaInicio;
+    // 1. OBTENER FECHA ACTUAL (Reloj de Argentina)
+    const ahoraArgentina = DateTime.now().setZone(ZONA_HORARIA);
+
+    const fechaParaGuardar = ahoraArgentina.setZone('UTC', { keepLocalTime: true }).toJSDate();
+
+    // 3. CÁLCULO DE FECHAS DE COBERTURA
+    let fechaInicioObj; 
 
     if (reiniciar_ciclo === true) {
-        fechaInicio = fechaActual;
+        fechaInicioObj = ahoraArgentina;
     } else {
         if (!cliente.fecha_vencimiento) {
-            fechaInicio = fechaActual;
+            fechaInicioObj = ahoraArgentina;
         } else {
-            const vencimientoActual = new Date(cliente.fecha_vencimiento);
-            fechaInicio = isNaN(vencimientoActual) ? fechaActual : vencimientoActual;
+            // Leemos la fecha de la DB y la interpretamos como Argentina
+            // (Usamos toISODate para evitar problemas de horas en fechas viejas)
+            const fechaStr = new Date(cliente.fecha_vencimiento).toISOString().split('T')[0];
+            const vencimientoActual = DateTime.fromISO(fechaStr, { zone: ZONA_HORARIA });
+            
+            fechaInicioObj = vencimientoActual.isValid ? vencimientoActual : ahoraArgentina;
         }
     }
 
-    const fechaFin = sumarMeses(fechaInicio, parseInt(cantidad_meses));
+    // Sumar meses (Luxon maneja bien los bisiestos y finales de mes)
+    const fechaFinObj = fechaInicioObj.plus({ months: parseInt(cantidad_meses) });
 
-    // 3. Operaciones en Base de Datos
+    // 4. OPERACIONES EN BASE DE DATOS
     const nuevoPago = await Pago.create({
         cliente_id,
         monto,
         metodo_pago,
         cantidad_meses,
-        fecha_inicio_cobertura: fechaInicio,
-        fecha_fin_cobertura: fechaFin
+        fecha_pago: fechaParaGuardar, // <--- Aquí va la fecha "visual" corregida
+        fecha_inicio_cobertura: fechaInicioObj.toISODate(), // Mandamos solo string YYYY-MM-DD
+        fecha_fin_cobertura: fechaFinObj.toISODate()        // Mandamos solo string YYYY-MM-DD
     });
 
     await cliente.update({
-        fecha_vencimiento: fechaFin,
+        fecha_vencimiento: fechaFinObj.toISODate(),
         activo: true
     });
 
-    // 4. Retornar solo los datos procesados
     return {                                  
-        pago: nuevoPago,   //modificar aca el mensaje cuando se realiza un pago
-        nuevo_vencimiento_cliente: fechaFin
+        pago: nuevoPago,   
+        nuevo_vencimiento_cliente: fechaFinObj.toISODate()
     };
 };
 
@@ -65,17 +70,15 @@ const obtenerHistorial = async (cliente_id) => {
 };
 
 const obtenerTodos = async () => {
-    // findAll busca todos. 
     return await Pago.findAll({
         include: {
             model: Cliente,
             attributes: ['nombre_completo', 'dni'] 
         },
-        order: [['fecha_pago', 'DESC']], // Los más nuevos arriba
-        limit: 100 // Limitamos a los últimos 100 pagos
+        order: [['fecha_pago', 'DESC']],
+        limit: 100 
     });
 };
-
 
 module.exports = {
     registrarPago,
