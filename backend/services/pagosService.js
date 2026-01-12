@@ -71,7 +71,8 @@ const obtenerTodos = async () => {
             model: Cliente,
             attributes: ['nombre_completo', 'dni'] 
         },
-        order: [['fecha_pago', 'DESC']] // Los más nuevos arriba
+        order: [['fecha_pago', 'DESC']], // Los más nuevos arriba
+        limit: 100 // Limitamos a los últimos 100 pagos
     });
 };
 

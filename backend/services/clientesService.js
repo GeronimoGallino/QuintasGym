@@ -55,10 +55,27 @@ const obtenerPorId = async (id) => {
     return cliente;
 };
 
+// 6. OBTENER VENCIDOS (Nueva función)
+const obtenerVencidos = async () => {
+    const hoy = new Date(); // Fecha y hora actual
+    
+    return await Cliente.findAll({
+        where: {
+            fecha_vencimiento: {
+                [Op.lt]: hoy, // "lt" significa Less Than (Menor que hoy)
+                [Op.ne]: null // Aseguramos que no sea nulo (ne = Not Equal)
+            },
+            activo: true // Opcional: Solo traemos los que no están borrados
+        },
+        order: [['fecha_vencimiento', 'DESC']] // Mostramos los más recientes primero (inverso)
+    });
+};
+
 module.exports = {
     crearCliente,
     obtenerClientes,
     actualizarCliente,
     eliminarCliente,
-    obtenerPorId
+    obtenerPorId,
+    obtenerVencidos
 };
