@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clientesService } from '../services/clientes.service';
 import ModalConfirmacion from '../components/ModalConfirmacion'; 
-import ModalExito from '../components/ModalExito'; // 1. IMPORTAMOS EL MODAL DE ÉXITO
+import ModalExito from '../components/ModalExito'; 
 
 const NuevoCliente = () => {
   const navigate = useNavigate();
@@ -26,7 +26,8 @@ const NuevoCliente = () => {
   // 3. NUEVO ESTADO PARA EL MODAL DE ÉXITO (Celebración)
   const [exitoConfig, setExitoConfig] = useState({
     show: false,
-    mensaje: ''
+    mensaje: '',
+    idCliente: null // <--- DATO NUEVO: Guardamos el ID para poder cobrarle
   });
 
   // Manejar inputs
@@ -46,10 +47,11 @@ const NuevoCliente = () => {
       const respuesta = await clientesService.create(datos);
 
       if (respuesta.tipo === 'CREADO') {
-        // CAMBIO AQUÍ: En lugar de alert, mostramos el modal de éxito
+        // CASO ÉXITO NUEVO: Guardamos el ID para ofrecer ir a Caja
         setExitoConfig({
             show: true,
-            mensaje: `¡${datos.nombre_completo} ha sido registrado correctamente!`
+            mensaje: `¡${datos.nombre_completo} ha sido registrado correctamente!`,
+            idCliente: respuesta.cliente.id // <--- Guardamos el ID
         });
       } 
       
@@ -77,10 +79,11 @@ const NuevoCliente = () => {
                 try {
                     await clientesService.reactivar(respuesta.cliente.id, datos);
                     
-                    // CAMBIO AQUÍ TAMBIÉN: Usamos el modal de éxito al reactivar
+                    // CASO REACTIVADO: Ponemos idCliente en null para NO ofrecer cobrar directo
                     setExitoConfig({
                         show: true,
-                        mensaje: `¡${respuesta.cliente.nombre_completo} ha sido reactivado con éxito!`
+                        mensaje: `¡${respuesta.cliente.nombre_completo} ha sido reactivado con éxito!`,
+                        idCliente: null 
                     });
                     
                 } catch (err) {
@@ -167,8 +170,14 @@ const NuevoCliente = () => {
       {/* 2. MODAL DE ÉXITO (Verde y con Check) */}
       <ModalExito 
         isOpen={exitoConfig.show}
-        onClose={cerrarExito} // Al cerrar (Click en "Genial"), nos vamos a la lista
+        onClose={cerrarExito} 
         mensaje={exitoConfig.mensaje}
+        
+        // LÓGICA NUEVA:
+        // Si tenemos un idCliente (Es nuevo), pasamos la función para navegar a cobrar.
+        // Si idCliente es null (Es reactivado o error), pasamos null y no aparece el botón.
+        onAccion={exitoConfig.idCliente ? () => navigate(`/cobrar/${exitoConfig.idCliente}`) : null}
+        textoAccion="💸 Cobrar 1º Cuota"
       />
 
     </div>

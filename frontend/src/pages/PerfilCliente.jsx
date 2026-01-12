@@ -43,6 +43,15 @@ const pedirConfirmacion = () => {
     }
   };
   // ------------------------------------
+  const formatearFecha = (fechaString) => {
+    if (!fechaString) return '---';
+    // Si viene hora completa (ISO), nos quedamos solo con la parte YYYY-MM-DD
+    const soloFecha = fechaString.split('T')[0];
+    // Partimos por el guion: [2026, 01, 12]
+    const [anio, mes, dia] = soloFecha.split('-');
+    return `${dia}/${mes}/${anio}`;
+  };
+
 
   if (loading) return <div className="text-white text-center mt-10">Cargando Carnet...</div>;
   if (!cliente) return null;
@@ -114,14 +123,14 @@ const pedirConfirmacion = () => {
             <div className="flex justify-between border-b border-gray-700 pb-2">
                 <span className="text-gray-400">Fecha Nacimiento:</span>
                 <span className="text-white font-mono">
-                    {cliente.fecha_nacimiento ? new Date(cliente.fecha_nacimiento).toLocaleDateString() : '---'}
+                    {formatearFecha(cliente.fecha_nacimiento)}
                 </span>
             </div>
 
             <div className="flex justify-between border-b border-gray-700 pb-2">
                 <span className="text-gray-400">Vencimiento Cuota:</span>
                 <span className={`${cliente.fecha_vencimiento ? 'text-white' : 'text-gray-500'} font-mono`}>
-                    {cliente.fecha_vencimiento ? new Date(cliente.fecha_vencimiento).toLocaleDateString() : 'Sin vencimiento'}
+                    {cliente.fecha_vencimiento ? formatearFecha(cliente.fecha_vencimiento) : 'Sin vencimiento'}
                 </span>
             </div>
 

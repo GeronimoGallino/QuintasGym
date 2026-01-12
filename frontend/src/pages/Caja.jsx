@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { clientesService } from '../services/clientes.service';
 import { pagosService } from '../services/pagos.service';
-// 1. IMPORTAMOS EL COMPONENTE NUEVO
 import ModalExito from '../components/ModalExito';
 
 const Caja = () => {
@@ -15,11 +14,13 @@ const Caja = () => {
   const [monto, setMonto] = useState('');
   const [meses, setMeses] = useState(1);
   const [metodo, setMetodo] = useState('Efectivo');
+  
+  // 1. NUEVO ESTADO PARA REINICIAR CICLO
+  const [reiniciarCiclo, setReiniciarCiclo] = useState(false);
 
-  // 2. ESTADO PARA CONTROLAR EL MODAL DE ÉXITO
+  // Estado para el Modal
   const [showExito, setShowExito] = useState(false);
 
-  // Cargamos cliente
   useEffect(() => {
     const cargarCliente = async () => {
       try {
@@ -33,7 +34,6 @@ const Caja = () => {
     cargarCliente();
   }, [id]);
 
-  // Manejar el envío del pago
   const handlePagar = async (e) => {
     e.preventDefault();
 
@@ -42,10 +42,10 @@ const Caja = () => {
         cliente_id: id,
         monto: parseFloat(monto),
         cantidad_meses: parseInt(meses),
-        metodo_pago: metodo
+        metodo_pago: metodo,
+        reiniciar_ciclo: reiniciarCiclo // <--- 2. ENVIAMOS LA OPCIÓN AL BACKEND
       });
   
-      // 3. AQUÍ EL CAMBIO: No navegamos todavía, mostramos el éxito
       setShowExito(true);
 
     } catch (error) {
@@ -53,11 +53,13 @@ const Caja = () => {
     }
   };
 
-  // 4. FUNCIÓN PARA CERRAR Y VOLVER AL INICIO
   const cerrarYSalir = () => {
       setShowExito(false);
-      navigate('/'); // Ahora sí nos vamos al Dashboard
+      navigate('/'); 
   };
+
+  // Validar botón
+  const esValido = monto && parseFloat(monto) > 0;
 
   if (!cliente) return <div className="text-white text-center mt-10">Cargando caja...</div>;
 
@@ -66,7 +68,7 @@ const Caja = () => {
       
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate(-1)} className="bg-gray-700 text-white p-2 rounded-full">⬅️</button>
+        <button onClick={() => navigate(-1)} className="bg-gray-700 text-white p-2 rounded-full active:scale-95">⬅️</button>
         <h1 className="text-xl font-bold text-green-500">Registrar Cobro</h1>
       </div>
 
@@ -77,14 +79,13 @@ const Caja = () => {
         <p className="text-xs text-gray-500 mt-1">DNI: {cliente.dni}</p>
       </div>
 
-      {/* Formulario */}
       <form onSubmit={handlePagar} className="flex flex-col gap-6">
         
         {/* Monto */}
         <div>
             <label className="text-white font-bold ml-1">Monto ($)</label>
             <input 
-                type="number" 
+                type="tel" 
                 value={monto} 
                 onChange={(e) => setMonto(e.target.value)}
                 placeholder="0.00"
@@ -99,13 +100,27 @@ const Caja = () => {
         <div className="flex gap-4">
             <div className="w-1/2">
                 <label className="text-gray-400 text-sm ml-1">Meses</label>
-                <input 
-                    type="number" 
+                
+                {/* CAMBIO: Usamos SELECT en lugar de INPUT */}
+                <select 
                     value={meses} 
                     onChange={(e) => setMeses(e.target.value)}
-                    min="1"
-                    className="w-full p-4 text-xl text-center rounded-xl bg-gray-800 text-white border border-gray-700 outline-none"
-                />
+                    className="w-full p-4 h-[62px] text-center rounded-xl bg-gray-800 text-white border border-gray-700 outline-none appearance-none"
+                >
+                    <option value="1">1 Mes</option>
+                    <option value="2">2 Meses</option>
+                    <option value="3">3 Meses</option>
+                    <option value="4">4 Meses</option>
+                    <option value="5">5 Meses</option>
+                    <option value="6">6 Meses</option>
+                    <option value="7">7 Meses</option>
+                    <option value="8">8 Meses</option>
+                    <option value="9">9 Meses</option>
+                    <option value="10">10 Meses</option>
+                    <option value="11">11 Meses</option>
+                    <option value="12">1 Año</option>
+                </select>
+
             </div>
             <div className="w-1/2">
                 <label className="text-gray-400 text-sm ml-1">Método</label>
@@ -114,27 +129,56 @@ const Caja = () => {
                     onChange={(e) => setMetodo(e.target.value)}
                     className="w-full p-4 h-[62px] text-center rounded-xl bg-gray-800 text-white border border-gray-700 outline-none"
                 >
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transf.</option>
+                    <option value="Efectivo">Efectivo/Transf/Qr</option>
                     <option value="Credito">Crédito</option>
                 </select>
             </div>
         </div>
+        {/* 3. CHECKBOX PARA REINICIAR CICLO */}
+        <div 
+            onClick={() => setReiniciarCiclo(!reiniciarCiclo)}
+            className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center gap-4 ${
+                reiniciarCiclo 
+                ? 'bg-blue-900/30 border-blue-500' 
+                : 'bg-gray-800 border-gray-700'
+            }`}
+        >
+            {/* Casilla Visual */}
+            <div className={`w-6 h-6 rounded border flex items-center justify-center ${
+                reiniciarCiclo ? 'bg-blue-500 border-blue-500' : 'border-gray-500'
+            }`}>
+                {reiniciarCiclo && <span className="text-white font-bold text-sm">✓</span>}
+            </div>
 
-        {/* Botón Pagar */}
+            {/* Texto Explicativo */}
+            <div className="flex flex-col">
+                <span className={`font-bold ${reiniciarCiclo ? 'text-blue-300' : 'text-gray-300'}`}>
+                    Reiniciar desde Hoy
+                </span>
+                <span className="text-xs text-gray-500">
+                    Úsalo si el cliente vuelve tras una ausencia larga.
+                </span>
+            </div>
+        </div>
+
+        {/* Botón Pagar (Con validación visual) */}
         <button 
             type="submit"
-            className="mt-4 bg-green-600 text-white text-xl font-bold p-5 rounded-2xl shadow-lg active:scale-95 transition-transform"
+            disabled={!esValido}
+            className={`mt-2 text-white text-xl font-bold p-5 rounded-2xl shadow-lg transition-all ${
+                esValido 
+                ? 'bg-green-600 active:scale-95 hover:bg-green-500' 
+                : 'bg-gray-600 opacity-50 cursor-not-allowed'
+            }`}
         >
             CONFIRMAR PAGO 💸
         </button>
 
       </form>
 
-      {/* 5. AGREGAMOS EL COMPONENTE AL FINAL */}
       <ModalExito 
         isOpen={showExito}
-        onClose={cerrarYSalir} // Al cerrar, ejecuta la navegación
+        onClose={cerrarYSalir} 
         mensaje={`Se cobraron $${monto} a ${cliente.nombre_completo}`}
       />
 
