@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pagosService } from '../services/pagos.service'; // Importamos el servicio
+import {formatearFechaYHora } from '../utils/dateUtils';
+
 
 const Pagos = () => {
   const navigate = useNavigate();
@@ -22,14 +24,6 @@ const Pagos = () => {
     cargarDatos();
   }, []);
 
-  // Función auxiliar para formatear fecha (Visual)
-  const formatearFecha = (fechaString) => {
-    const fecha = new Date(fechaString);
-    return {
-        dia: fecha.toLocaleDateString(),
-        hora: fecha.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    };
-  };
 
   return (
     <div className="p-4 flex flex-col gap-4 min-h-screen">
@@ -50,7 +44,7 @@ const Pagos = () => {
         {loading && <p className="text-center text-gray-500 mt-10">Cargando caja...</p>}
 
         {!loading && pagos.map((pago) => {
-            const { dia, hora } = formatearFecha(pago.fecha_pago);
+            const { fecha, hora } = formatearFechaYHora(pago.fecha_pago);
             
             return (
                 <div 
@@ -63,7 +57,7 @@ const Pagos = () => {
                             {pago.Cliente ? pago.Cliente.nombre_completo : 'Cliente Eliminado'}
                         </h3>
                         <p className="text-gray-400 text-xs mt-1">
-                            📅 {dia} - 🕒 {hora} hs
+                            📅 {fecha} - 🕒 {hora} hs
                         </p>
                         <span className="text-xs text-gray-500 bg-gray-900 px-2 py-0.5 rounded mt-1 inline-block">
                             {pago.metodo_pago}

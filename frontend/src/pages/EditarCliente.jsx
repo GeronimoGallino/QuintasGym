@@ -1,7 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { clientesService } from '../services/clientes.service';
-import ModalExito from '../components/ModalExito'; // 1. IMPORTAMOS EL MODAL
+import ModalExito from '../components/ModalExito';
+import ModalConfirmacion from '../components/ModalConfirmacion'; 
+
+// 1. UI COMPONENT: INPUT PRO (Copiado de NuevoCliente)
+const FormInput = ({ label, ...props }) => (
+  <div className="group">
+    <label className="block text-gray-400 text-sm font-medium mb-2 ml-1 transition-colors group-focus-within:text-blue-400">
+      {label}
+    </label>
+    <input 
+      className="w-full bg-gray-800 text-white text-lg placeholder-gray-500 py-3 px-4 rounded-xl border border-gray-700 transition-all duration-200 ease-in-out focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-gray-800/80 shadow-sm"
+      {...props} 
+    />
+  </div>
+);
+
+// 2. UI COMPONENT: SELECT PRO (Copiado de NuevoCliente)
+const FormSelect = ({ label, children, ...props }) => (
+  <div className="group">
+    <label className="block text-gray-400 text-sm font-medium mb-2 ml-1 transition-colors group-focus-within:text-blue-400">
+      {label}
+    </label>
+    <div className="relative">
+        <select 
+            className="w-full bg-gray-800 text-white text-lg py-3 px-4 rounded-xl border border-gray-700 transition-all duration-200 ease-in-out focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 appearance-none cursor-pointer"
+            {...props}
+        >
+            {children}
+        </select>
+        {/* Icono de flecha custom */}
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+        </div>
+    </div>
+  </div>
+);
 
 const EditarCliente = () => {
   const { id } = useParams();
@@ -14,16 +49,19 @@ const EditarCliente = () => {
     direccion: '', sexo: '', fecha_nacimiento: ''
   });
 
-  // 2. ESTADO PARA CONTROLAR EL MODAL
+  // Estados para modales
   const [showExito, setShowExito] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false, titulo: '', mensaje: '', textoConfirmar: '', 
+    colorBoton: '', accionConfirmar: () => {} 
+  });
 
-  // Cargar datos actuales al entrar
+  // Cargar datos actuales
   useEffect(() => {
     const cargarDatos = async () => {
       try {
         const data = await clientesService.getById(id);
         
-        // Formatear la fecha para que el input type="date" la entienda (YYYY-MM-DD)
         let fechaFormat = '';
         if (data.fecha_nacimiento) {
             fechaFormat = new Date(data.fecha_nacimiento).toISOString().split('T')[0];
@@ -48,140 +86,140 @@ const EditarCliente = () => {
     cargarDatos();
   }, [id]);
 
-  // Manejar cambios en los inputs (Agregué la validación de números para DNI/Teléfono igual que en NuevoCliente)
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
     if (name === 'dni' || name === 'telefono') {
-        // Solo permite números
         setFormData({ ...formData, [name]: value.replace(/[^0-9]/g, '') });
     } else {
         setFormData({ ...formData, [name]: value });
     }
   };
 
-  // 3. GUARDAR CAMBIOS
+  // LOGICA DE GUARDADO (Idéntica a la que ya teníamos)
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await clientesService.update(id, formData);
+      const respuesta = await clientesService.update(id, formData);
       
-      // CAMBIO AQUÍ: Mostramos el modal en lugar del alert
+      // CASO DUPLICADO
+      if (respuesta.tipo === 'YA_EXISTE') {
+        setModalConfig({
+            isOpen: true,
+            titulo: '⛔ No se puede guardar',
+            mensaje: `El DNI ${formData.dni} ya pertenece al cliente "${respuesta.cliente.nombre_completo}".`,
+            textoConfirmar: 'Entendido, voy a corregirlo',
+            colorBoton: 'bg-red-600',
+            accionConfirmar: () => setModalConfig({ ...modalConfig, isOpen: false })
+        });
+        return;
+      }
+
+      // CASO ÉXITO
       setShowExito(true);
 
     } catch (error) {
+      console.error(error);
       alert('Error al guardar los cambios.');
     }
   };
 
-  // 4. FUNCIÓN PARA CERRAR Y VOLVER AL PERFIL
   const finalizarEdicion = () => {
       setShowExito(false);
-      navigate(-1); // Vuelve a la pantalla anterior (El perfil del cliente)
+      navigate(-1); 
   };
 
   if (loading) return <div className="text-white text-center mt-10">Cargando formulario...</div>;
 
   return (
-    <div className="p-4 flex flex-col min-h-screen">
+    // CONTENEDOR CENTRALIZADO (Estilo Pro)
+    <div className="p-6 flex flex-col gap-6 text-white pb-20 max-w-2xl mx-auto w-full">
       
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate(-1)} className="bg-gray-700 text-white p-2 rounded-full active:scale-95">⬅️</button>
-        <h1 className="text-xl font-bold text-white">Editar Cliente</h1>
+      {/* Header Estilizado */}
+      <div className="flex items-center gap-4 mb-4">
+        <button onClick={() => navigate(-1)} className="bg-gray-800 hover:bg-gray-700 text-gray-300 p-3 rounded-full active:scale-95 transition-all">
+            ⬅️
+        </button>
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
+            Editar Cliente
+        </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         
         {/* Nombre */}
-        <div>
-            <label className="text-gray-400 text-sm ml-1">Nombre Completo</label>
-            <input 
-                type="text" name="nombre_completo" required
-                value={formData.nombre_completo} onChange={handleChange}
-                className="w-full p-4 rounded-xl bg-gray-800 text-white border border-gray-700 focus:border-blue-500 outline-none"
+        <FormInput 
+            label="Nombre Completo" name="nombre_completo" required
+            value={formData.nombre_completo} onChange={handleChange}
+        />
+
+        {/* Grid: DNI y Sexo */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FormInput 
+                label="DNI" name="dni" type="tel" required maxLength={10}
+                value={formData.dni} onChange={handleChange}
             />
+            <FormSelect 
+                label="Sexo" name="sexo" 
+                value={formData.sexo} onChange={handleChange}
+            >
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+            </FormSelect>
         </div>
 
-        {/* DNI y Sexo */}
-        <div className="flex gap-2">
-            <div className="w-2/3">
-                <label className="text-gray-400 text-sm ml-1">DNI</label>
-                <input 
-                    type="tel" name="dni" required
-                    value={formData.dni} onChange={handleChange}
-                    className="w-full p-4 rounded-xl bg-gray-800 text-white border border-gray-700 outline-none"
-                    maxLength={10}
-                />
-            </div>
-            <div className="w-1/3">
-                <label className="text-gray-400 text-sm ml-1">Sexo</label>
-                <select 
-                    name="sexo" 
-                    value={formData.sexo} onChange={handleChange}
-                    className="w-full p-4 rounded-xl bg-gray-800 text-white border border-gray-700 outline-none h-[58px]"
-                >
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
-                </select>
-            </div>
-        </div>
-
-        {/* Teléfono */}
-        <div>
-            <label className="text-gray-400 text-sm ml-1">Teléfono</label>
-            <input 
-                type="tel" name="telefono"
+        {/* Grid: Teléfono y Email */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FormInput 
+                label="Teléfono" name="telefono" type="tel"
                 value={formData.telefono} onChange={handleChange}
-                className="w-full p-4 rounded-xl bg-gray-800 text-white border border-gray-700 outline-none"
             />
-        </div>
-
-        {/* Email */}
-        <div>
-            <label className="text-gray-400 text-sm ml-1">Email</label>
-            <input 
-                type="email" name="mail"
+            <FormInput 
+                label="Email" name="mail" type="email"
                 value={formData.mail} onChange={handleChange}
-                className="w-full p-4 rounded-xl bg-gray-800 text-white border border-gray-700 outline-none"
             />
         </div>
 
         {/* Dirección */}
-        <div>
-            <label className="text-gray-400 text-sm ml-1">Dirección</label>
-            <input 
-                type="text" name="direccion"
-                value={formData.direccion} onChange={handleChange}
-                className="w-full p-4 rounded-xl bg-gray-800 text-white border border-gray-700 outline-none"
-            />
-        </div>
+        <FormInput 
+            label="Dirección" name="direccion"
+            value={formData.direccion} onChange={handleChange}
+        />
 
         {/* Fecha Nacimiento */}
-        <div>
-            <label className="text-gray-400 text-sm ml-1">Fecha de Nacimiento</label>
-            <input 
-                type="date" name="fecha_nacimiento"
-                value={formData.fecha_nacimiento} onChange={handleChange}
-                className="w-full p-4 rounded-xl bg-gray-800 text-white border border-gray-700 outline-none"
-                style={{ colorScheme: 'dark' }}
-            />
-        </div>
+        <FormInput 
+            label="Fecha de Nacimiento" name="fecha_nacimiento" type="date"
+            value={formData.fecha_nacimiento} onChange={handleChange}
+            style={{ colorScheme: 'dark' }}
+        />
 
-        {/* Botón Guardar */}
+        {/* BOTÓN CON ESTILO GLOW */}
         <button 
             type="submit"
-            className="bg-blue-600 text-white p-4 rounded-xl font-bold mt-4 shadow-lg active:scale-95 transition-transform"
+            className="mt-6 w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-lg tracking-wide py-4 px-6 rounded-xl shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] transform active:scale-[0.98] transition-all duration-200"
         >
             GUARDAR CAMBIOS
         </button>
 
       </form>
 
-      {/* 5. MODAL DE ÉXITO */}
+      {/* Modal Error / Duplicado */}
+      <ModalConfirmacion 
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        onConfirm={() => {
+            modalConfig.accionConfirmar(); 
+            setModalConfig({ ...modalConfig, isOpen: false });
+        }}
+        titulo={modalConfig.titulo}
+        mensaje={modalConfig.mensaje}
+        textoConfirmar={modalConfig.textoConfirmar}
+        colorBoton={modalConfig.colorBoton}
+      />
+
+      {/* Modal Éxito */}
       <ModalExito 
         isOpen={showExito}
-        onClose={finalizarEdicion} // Al cerrar, ejecutamos navigate(-1)
+        onClose={finalizarEdicion} 
         mensaje="Los datos del cliente se actualizaron correctamente."
       />
 

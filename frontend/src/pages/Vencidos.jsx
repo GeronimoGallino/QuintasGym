@@ -1,34 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clientesService } from '../services/clientes.service';
-// 1. IMPORTAMOS EL MODAL DE ACCIONES
 import ModalAcciones from '../components/ModalAcciones';
-
+import { formatearFecha, calcularDiasDeRetraso } from '../utils/dateUtils';
 const Vencidos = () => {
   const navigate = useNavigate();
   const [vencidos, setVencidos] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // 2. ESTADO PARA SABER A QUIÉN SE LE HIZO CLICK
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   
-  // 1. Función auxiliar para calcular días (Matemática simple)
-  const calcularDiasDeRetraso = (fechaVencimiento) => {
-    if (!fechaVencimiento) return 0;
-    
-    const vencimiento = new Date(fechaVencimiento);
-    const hoy = new Date();
-    
-    // Calculamos la diferencia en milisegundos
-    const diferenciaTime = hoy - vencimiento;
-    
-    // Convertimos milisegundos a días (1000ms * 60s * 60m * 24h)
-    const dias = Math.ceil(diferenciaTime / (1000 * 60 * 60 * 24));
-    
-    return dias;
-  };
-
-  // 2. Cargar datos del backend
+  
   useEffect(() => {
     const cargarDatos = async () => {
       try {
@@ -60,13 +41,11 @@ const Vencidos = () => {
 
         {!loading && vencidos.map((cliente) => {
             
-            // Calculamos los días para este cliente específico
             const diasVencido = calcularDiasDeRetraso(cliente.fecha_vencimiento);
 
             return (
                 <button 
                     key={cliente.id}
-                    // 3. CAMBIO: Al clickear, guardamos el cliente en el estado (abre el modal)
                     onClick={() => setClienteSeleccionado(cliente)}
                     className="bg-gray-800 p-4 rounded-xl flex justify-between items-center w-full active:bg-gray-700 transition-colors border-l-4 border-red-500 shadow-lg"
                 >
@@ -76,11 +55,12 @@ const Vencidos = () => {
                             {cliente.nombre_completo}
                         </span>
                         <span className="text-gray-400 text-xs mt-1">
-                            Venció: {new Date(cliente.fecha_vencimiento).toLocaleDateString()}
+                            {/* CAMBIO AQUI: Usamos la función formatearFecha */}
+                            Venció: {formatearFecha(cliente.fecha_vencimiento)}
                         </span>
                     </div>
 
-                    {/* DERECHA: El dato que pediste (Días de atraso) */}
+                    {/* DERECHA: Días de atraso */}
                     <div className="flex flex-col items-end">
                         <span className="text-red-400 font-bold text-xl">
                             {diasVencido} días
@@ -102,16 +82,11 @@ const Vencidos = () => {
         )}
       </div>
 
-      {/* 4. RENDERIZAMOS EL MODAL DE ACCIONES */}
       <ModalAcciones 
         isOpen={!!clienteSeleccionado} 
         cliente={clienteSeleccionado}
         onClose={() => setClienteSeleccionado(null)} 
-        
-        // Acción A: Ir a Cobrar
         onCobrar={() => navigate(`/cobrar/${clienteSeleccionado.id}`)}
-        
-        // Acción B: Ir al Perfil (Carnet)
         onVerCarnet={() => navigate(`/clientes/${clienteSeleccionado.id}`)}
       />
       

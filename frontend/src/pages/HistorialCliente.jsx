@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { pagosService } from '../services/pagos.service';
 import { clientesService } from '../services/clientes.service';
-
+import {formatearFechaYHora } from '../utils/dateUtils';
 const HistorialCliente = () => {
   const { id } = useParams(); // ID del cliente
   const navigate = useNavigate();
@@ -32,15 +32,6 @@ const HistorialCliente = () => {
     cargarDatos();
   }, [id]);
 
-  // Función visual para fechas
-  const formatearFecha = (fechaString) => {
-    const fecha = new Date(fechaString);
-    return {
-        fecha: fecha.toLocaleDateString(),
-        hora: fecha.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    };
-  };
-
   return (
     <div className="p-4 flex flex-col gap-4 min-h-screen">
       
@@ -59,7 +50,7 @@ const HistorialCliente = () => {
         {loading && <p className="text-center text-gray-500 mt-10">Buscando comprobantes...</p>}
 
         {!loading && pagos.map((pago) => {
-            const { fecha, hora } = formatearFecha(pago.fecha_pago);
+            const { fecha, hora } = formatearFechaYHora(pago.fecha_pago);
             
             return (
                 <div 

@@ -28,15 +28,32 @@ const obtenerClientes = async (filtroNombre) => {
 
 // 3. ACTUALIZAR
 const actualizarCliente = async (id, datosNuevos) => {
-    const cliente = await Cliente.findByPk(id);
-    if (!cliente) {
-        throw new Error("CLIENTE_NO_ENCONTRADO");
-    }
     
-    // Actualizamos los campos
-    return await cliente.update(datosNuevos);
-};
+    // 1. LOGICA DE NEGOCIO: Chequear duplicados
+    // Buscamos si hay OTRO cliente (id != idActual) con el mismo DNI
+    if (datosNuevos.dni) {
+        const duplicado = await Cliente.findOne({
+            where: {
+                dni: datosNuevos.dni,
+                id: { [Op.ne]: id } // "Op.ne" significa "Not Equal" (No igual a mi ID)
+            }
+        });
 
+        if (duplicado) {
+            // Si encontramos uno, devolvemos un objeto especial avisando
+            return { 
+                resultado: 'DUPLICADO', 
+                clienteExistente: duplicado 
+            };
+        }
+    }
+
+    // 2. Si no hay duplicados, actualizamos
+    await Cliente.update(datosNuevos, { where: { id } });
+    
+    // Retornamos éxito
+    return { resultado: 'OK' };
+};
 // 4. BORRADO LÓGICO (No borramos el registro, solo lo desactivamos)
 const eliminarCliente = async (id) => {
     const cliente = await Cliente.findByPk(id);

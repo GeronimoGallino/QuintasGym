@@ -6,7 +6,7 @@ import ModalExito from '../components/ModalExito';
 
 const Caja = () => {
   const { id } = useParams(); 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
   
   const [cliente, setCliente] = useState(null);
   
@@ -64,7 +64,7 @@ const Caja = () => {
   if (!cliente) return <div className="text-white text-center mt-10">Cargando caja...</div>;
 
   return (
-    <div className="p-4 min-h-screen flex flex-col">
+    <div className="p-4 min-h-screen flex flex-col w-full max-w-2xl mx-auto ">
       
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">

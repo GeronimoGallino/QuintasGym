@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { clientesService } from '../services/clientes.service';
 import ModalConfirmacion from '../components/ModalConfirmacion';
-
+import { formatearFecha } from '../utils/dateUtils';
 const PerfilCliente = () => {
   const { id } = useParams(); 
   const navigate = useNavigate(); // Usamos este único navigate para todo
@@ -43,16 +43,6 @@ const pedirConfirmacion = () => {
     }
   };
   // ------------------------------------
-  const formatearFecha = (fechaString) => {
-    if (!fechaString) return '---';
-    // Si viene hora completa (ISO), nos quedamos solo con la parte YYYY-MM-DD
-    const soloFecha = fechaString.split('T')[0];
-    // Partimos por el guion: [2026, 01, 12]
-    const [anio, mes, dia] = soloFecha.split('-');
-    return `${dia}/${mes}/${anio}`;
-  };
-
-
   if (loading) return <div className="text-white text-center mt-10">Cargando Carnet...</div>;
   if (!cliente) return null;
 

@@ -55,18 +55,25 @@ const listar = async (req, res) => {
 const actualizar = async (req, res) => {
     try {
         const { id } = req.params;
-        const clienteActualizado = await clientesService.actualizarCliente(id, req.body);
-        res.json({ mensaje: "Cliente actualizado", cliente: clienteActualizado });
-    } catch (err) {
-        if (err.message === "CLIENTE_NO_ENCONTRADO") {
-            return res.status(404).json({ error: "Cliente no encontrado" });
+        // LLAMAMOS AL SERVICIO
+        const respuestaServicio = await clientesService.actualizarCliente(id, req.body);
+        // EVALUAMOS QUÉ NOS DIJO EL SERVICIO
+        if (respuestaServicio.resultado === 'DUPLICADO') {
+            return res.status(200).json({ 
+                tipo: 'YA_EXISTE', 
+                mensaje: 'El DNI ya está en uso.',
+                cliente: respuestaServicio.clienteExistente
+            });
         }
-        console.error(err);
-        res.status(500).send("Error al actualizar");
-    }
-};
 
-// Eliminar (Lógico)
+        // Caso B: Todo salió rico
+        res.status(200).json({ tipo: 'OK', message: "Cliente actualizado correctamente" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error al procesar la solicitud");
+    }
+};// Eliminar (Lógico)
 const eliminar = async (req, res) => {
     try {
         const { id } = req.params;
