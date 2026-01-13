@@ -12,9 +12,9 @@ export const formatearFecha = (fechaString) => {
   };
 
 /**
- * Calcula cuántos días pasaron desde la fecha dada hasta hoy.
+ * Calcula cuántos días pasarons desde la fecha dada hasta hoy.
  * Retorna positivo si está vencido, negativo o 0 si está al día.
- */
+ */   
 export const calcularDiasDeRetraso = (fechaVencimientoStr) => {
     if (!fechaVencimientoStr) return 0;
     
