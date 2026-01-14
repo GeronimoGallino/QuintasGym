@@ -26,7 +26,7 @@ const Vencidos = () => {
   }, []);
 
   return (
-    <div className="p-4 flex flex-col gap-4 min-h-screen">
+    <div className="p-4 flex flex-col gap-4 min-h-screen max-w-2xl mx-auto w-full">
       
       {/* Header Rojo */}
       <div className="flex items-center gap-4 mb-4">

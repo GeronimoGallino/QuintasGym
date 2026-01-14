@@ -47,7 +47,7 @@ const pedirConfirmacion = () => {
   if (!cliente) return null;
 
   return (
-    <div className="p-4 flex flex-col min-h-screen relative">
+    <div className="p-4 flex flex-col min-h-screen relative max-w-2xl mx-auto w-full ">
       
       {/* Header con botón Volver */}
       <div className="flex items-center gap-4 mb-6">

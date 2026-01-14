@@ -35,7 +35,7 @@ const Clientes = () => {
   );
 
   return (
-    <div className="p-4 flex flex-col gap-4">
+    <div className="p-4 flex flex-col gap-4 max-w-2xl mx-auto w-full">
       
       {/* Header */}
       <div className="flex items-center gap-4 mb-2">

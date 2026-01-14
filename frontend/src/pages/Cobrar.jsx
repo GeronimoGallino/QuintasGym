@@ -28,7 +28,7 @@ const Cobrar = () => {
   );
 
   return (
-    <div className="p-4 flex flex-col gap-4 min-h-screen">
+    <div className="p-4 flex flex-col gap-4 min-h-screen max-w-2xl mx-auto w-full">
       
       {/* Header VERDE */}
       <div className="flex items-center gap-4 mb-2">
