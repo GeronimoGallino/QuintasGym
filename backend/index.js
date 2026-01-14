@@ -10,29 +10,31 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // --- CONFIGURACIÓN DE CORS (SEGURIDAD) ---
-// Definimos quiénes tienen permiso de entrar
 const allowedOrigins = [
-  'http://localhost:5173', // Tu Frontend local (Vite)
-  process.env.FRONTEND_URL // La URL que tendrá tu web en Render (La configuraremos luego)
+  'http://localhost:5173', 
+  process.env.FRONTEND_URL 
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
+    // 1. Permitir sin origen (Apps, Postman)
     if (!origin) return callback(null, true);
     
+    // 2. Permitir si está en la lista (Render o Localhost)
     if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true); // Permitido
+      return callback(null, true); // <--- AGREGADO 'return'
     } 
+
+    // 3. Permitir red local (Wi-Fi)
     if (origin.startsWith('http://192.168')) {
          return callback(null, true);
     }
 
+    // 4. Bloquear el resto
     console.error(`🚫 Bloqueado por CORS: ${origin}`);
-    callback(new Error(`No permitido por CORS. Origen bloqueado: ${origin}`));
-    
+    return callback(new Error(`No permitido por CORS. Origen bloqueado: ${origin}`));
   },
-  credentials: true // Permite cookies/headers si hicieran falta
+  credentials: true 
 }));
 
 // Middlewares
@@ -42,8 +44,7 @@ app.use(express.json());
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/pagos', pagosRoutes);
 
-// RUTA DE PRUEBA (Health Check)
-// Sirve para que Render sepa que tu app está viva
+// RUTA DE PRUEBA
 app.get('/', (req, res) => {
     res.send("Backend del Gimnasio Funcionando 🚀");
 });
@@ -66,8 +67,12 @@ app.listen(port, async () => {
   console.log(`🚀 Servidor corriendo en el puerto ${port}`);
   try {
       await sequelize.authenticate();
-      console.log('✅ Base de Datos Sincronizada');
-      // Opcional: sequelize.sync({ alter: true }); // Solo si necesitas actualizar tablas automáticamente
+      console.log('✅ Base de Datos Conectada');
+      
+      // ESTO ES LO QUE SOLUCIONA TU PROBLEMA DE "ERROR AL LISTAR":
+      await sequelize.sync({ alter: true }); 
+      console.log('📦 Tablas Sincronizadas (Creadas si no existían)');
+      
   } catch (error) {
       console.error('❌ Error de conexión:', error);
   }
