@@ -39,7 +39,7 @@ const Pago = sequelize.define('Pago', {
   },
 
   fecha_pago: {
-    type: DataTypes.DATE,
+    type: TYMESTAMP,
     
     get() {
       const rawValue = this.getDataValue('fecha_pago');
