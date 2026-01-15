@@ -1,41 +1,55 @@
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
+
 /**
- * Convierte un string "YYYY-MM-DD" a "DD/MM/YYYY"
- * Sin aplicar zonas horarias (evita el bug de restar 1 día).
+ * MODO ESPEJO: Muestra exactamente lo que recibe.
+ * Elimina la "Z" si existe para evitar que el navegador cambie la hora.
  */
+
+// Función auxiliar para limpiar la fecha
+const limpiarFecha = (fechaString) => {
+    if (!fechaString) return null;
+    // Si viene con Z (UTC), se la sacamos para que sea "Local"
+    return fechaString.endsWith('Z') ? fechaString.slice(0, -1) : fechaString;
+};
+
 export const formatearFecha = (fechaString) => {
     if (!fechaString) return '---';
-    // Si viene hora completa (ISO), nos quedamos solo con la parte YYYY-MM-DD
-    const soloFecha = fechaString.split('T')[0];
-    // Partimos por el guion: [2026, 01, 12]
-    const [anio, mes, dia] = soloFecha.split('-');
-    return `${dia}/${mes}/${anio}`;
-  };
+    try {
+        const fechaLimpia = limpiarFecha(fechaString);
+        const fecha = parseISO(fechaLimpia);
+        return format(fecha, 'dd/MM/yyyy', { locale: es });
+    } catch (error) {
+        return '---';
+    }
+};
 
-/**
- * Calcula cuántos días pasarons desde la fecha dada hasta hoy.
- * Retorna positivo si está vencido, negativo o 0 si está al día.
- */   
 export const calcularDiasDeRetraso = (fechaVencimientoStr) => {
     if (!fechaVencimientoStr) return 0;
-    
-    // 1. Convertimos string a fecha local 00:00
     const [anio, mes, dia] = fechaVencimientoStr.split('-');
     const fechaVenc = new Date(anio, mes - 1, dia);
-
-    // 2. Fecha de hoy 00:00 local
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-
-    // 3. Diferencia en días
     const diferenciaTime = hoy - fechaVenc;
     return Math.ceil(diferenciaTime / (1000 * 60 * 60 * 24));
 };
 
-  // Función visual para fechas
 export const formatearFechaYHora = (fechaString) => {
-    const fecha = new Date(fechaString);
-    return {
-        fecha: fecha.toLocaleDateString(),
-        hora: fecha.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-    };
-  };
+    if (!fechaString) return { fecha: '---', hora: '---' };
+
+    try {
+        // 1. Limpiamos la Z para que el navegador no intente "corregir" la hora
+        const fechaLimpia = limpiarFecha(fechaString);
+        
+        // 2. Parseamos tal cual viene (11:00 sigue siendo 11:00)
+        const fecha = parseISO(fechaLimpia);
+
+        return {
+            fecha: format(fecha, 'dd/MM/yyyy', { locale: es }),
+            hora: format(fecha, 'HH:mm', { locale: es })
+        };
+    } catch (error) {
+        console.error("Error formateando fecha:", error);
+        return { fecha: 'Error', hora: 'Error' };
+    }
+};

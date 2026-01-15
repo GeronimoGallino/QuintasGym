@@ -17,8 +17,8 @@ const registrarPago = async (datosPago) => {
     // 1. OBTENER FECHA ACTUAL (Reloj de Argentina)
     const ahoraArgentina = DateTime.now().setZone(ZONA_HORARIA);
 
-    const fechaParaGuardar = ahoraArgentina.setZone('UTC', { keepLocalTime: true }).toJSDate();
-
+    const fechaParaGuardar = ahoraArgentina.toFormat('yyyy-MM-dd HH:mm:ss');
+    
     // 3. CÁLCULO DE FECHAS DE COBERTURA
     let fechaInicioObj; 
 

@@ -68,9 +68,8 @@ app.listen(port, async () => {
   try {
       await sequelize.authenticate();
       console.log('✅ Base de Datos Conectada');
-      
-      // ESTO ES LO QUE SOLUCIONA TU PROBLEMA DE "ERROR AL LISTAR":
-      await sequelize.sync({ alter: true }); 
+  
+      await sequelize.sync({ force: true }); 
       console.log('📦 Tablas Sincronizadas (Creadas si no existían)');
       
   } catch (error) {

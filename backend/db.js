@@ -4,25 +4,32 @@ require('dotenv').config();
 let sequelize;
 
 // OBTENER CONFIGURACIÓN SEGÚN EL ENTORNO
-// Render usa una "DATABASE_URL" larga. En local usamos variables sueltas.
 const connectionString = process.env.DATABASE_URL;
 
-// CONFIGURACIÓN SSL (Obligatorio para Render, opcional para Local)
-// Si estamos en producción (hay DATABASE_URL), activamos SSL.
-const dialectOptions = connectionString ? {
-  ssl: {
-    require: true,
-    rejectUnauthorized: false // Esto evita errores con certificados auto-firmados de Render
-  }
-} : {};
+// 1. CONFIGURACIÓN BASE (Igual para Local y Render)
+// Esto es lo que te faltaba: Forzamos a que NO toque las horas.
+const dialectOptions = {
+  useUTC: false,       // No convertir a UTC
+  dateStrings: true,   // Leer fecha como string (texto)
+  typeCast: true       // No intentar interpretar zonas horarias
+};
 
+// 2. CONFIGURACIÓN SSL (Solo si estamos en Render/Producción)
+if (connectionString) {
+  dialectOptions.ssl = {
+    require: true,
+    rejectUnauthorized: false // Evita errores con certificados de Render
+  };
+}
+
+// 3. INICIALIZAR LA CONEXIÓN
 if (connectionString) {
   // --- MODO PRODUCCIÓN (RENDER) ---
   console.log("🌍 Conectando a Base de Datos en la NUBE...");
   sequelize = new Sequelize(connectionString, {
     dialect: 'postgres',
     logging: false,
-    dialectOptions: dialectOptions
+    dialectOptions: dialectOptions // Aquí van las reglas de fecha + SSL
   });
 
 } else {
@@ -37,6 +44,7 @@ if (connectionString) {
       dialect: 'postgres',
       port: process.env.DB_PORT,
       logging: false,
+      dialectOptions: dialectOptions // Aquí van las reglas de fecha (sin SSL)
     }
   );
 }
@@ -45,7 +53,7 @@ if (connectionString) {
 (async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ Conexión con Sequelize exitosa');
+    console.log('✅ Conexión con Sequelize exitosa (Modo Texto/Raw)');
   } catch (error) {
     console.error('❌ Error conectando a la BD:', error);
   }
