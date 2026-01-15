@@ -69,7 +69,7 @@ app.listen(port, async () => {
       await sequelize.authenticate();
       console.log('✅ Base de Datos Conectada');
   
-      await sequelize.sync({ force: true }); 
+      await sequelize.sync({ alter: true }); 
       console.log('📦 Tablas Sincronizadas (Creadas si no existían)');
       
   } catch (error) {
