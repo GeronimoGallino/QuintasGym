@@ -35,8 +35,7 @@ const registrarPago = async (datosPago) => {
             const fechaStr = new Date(cliente.fecha_vencimiento).toISOString().split('T')[0];
             const vencimientoActual = DateTime.fromISO(fechaStr, { zone: ZONA_HORARIA });
             
-            // Si el vencimiento es futuro, empalmamos. Si ya pasó, arrancamos hoy.
-            fechaInicioObj = vencimientoActual > ahoraArgentina ? vencimientoActual : ahoraArgentina;
+            fechaInicioObj = vencimientoActual.isValid ? vencimientoActual : ahoraArgentina;
         }
     }
 
@@ -63,10 +62,10 @@ const registrarPago = async (datosPago) => {
         fecha_inicio_cobertura: fechaInicioObj.toISODate(), 
         fecha_fin_cobertura: fechaFinObj.toISODate()        
     });
-
+    
     await cliente.update({
         fecha_vencimiento: fechaFinObj.toISODate(),
-        activo: true
+        activo: mesesInt == 0 ? false : true // Si es pase diario, no lo activamos
     });
 
     return {                                  

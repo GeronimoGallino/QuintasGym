@@ -57,9 +57,7 @@ const Pago = sequelize.define('Pago', {
 
 }, {
   tableName: 'pagos',
-  timestamps: true, 
-  createdAt: 'fecha_pago', // Sequelize sigue sabiendo que este es el campo de creación
-  updatedAt: false         
+  timestamps: false
 });
 
 Pago.belongsTo(Cliente, { foreignKey: 'cliente_id' });

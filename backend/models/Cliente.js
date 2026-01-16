@@ -24,7 +24,7 @@ const Cliente = sequelize.define('Cliente', {
     type: DataTypes.STRING(255)
   },
   fecha_nacimiento: {
-    type: DataTypes.DATEONLY // DATEONLY es para fechas sin hora
+    type: DataTypes.DATEONLY
   },
   sexo: {
     type: DataTypes.STRING(10)
@@ -38,14 +38,15 @@ const Cliente = sequelize.define('Cliente', {
   activo: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  fecha_registro: {
+    type: DataTypes.DATEONLY,
+    defaultValue: DataTypes.NOW,
+    allowNull: false
   }
 }, {
   tableName: 'clientes', // Para que coincida con la tabla que creaste en SQL
-  timestamps: false,      // Si pusiste fecha_registro manual, usa false. 
-  // OJO: Sequelize suele usar 'createdAt' y 'updatedAt'. 
-  // Como tu tabla tiene 'fecha_registro', podemos mapearlo así:
-  createdAt: 'fecha_registro',
-  updatedAt: false
+  timestamps: false
 });
 
 module.exports = Cliente;
