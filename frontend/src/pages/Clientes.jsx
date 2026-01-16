@@ -29,7 +29,7 @@ const Clientes = () => {
     cargarDatos();
   }, []);
 
-  // Lógica de filtrado (se mantiene igual)
+ 
   const clientesFiltrados = clientes.filter(cliente => 
     cliente.nombre_completo.toLowerCase().includes(busqueda.toLowerCase())
   );

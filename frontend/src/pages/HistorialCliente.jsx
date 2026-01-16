@@ -75,8 +75,11 @@ const HistorialCliente = () => {
                         <span className="text-green-400 font-bold text-xl">
                             ${pago.monto}
                         </span>
-                        <span className="text-blue-200 text-xs font-medium">
-                            {pago.cantidad_meses} {pago.cantidad_meses === 1 ? 'Mes' : 'Meses'}
+                              <span className="text-blue-200 text-xs font-medium">
+                                  {pago.cantidad_meses === 0 
+                                    ? '1 Día' 
+                                    : `${pago.cantidad_meses} ${pago.cantidad_meses === 1 ? 'Mes' : 'Meses'}`
+                                  }
                         </span>
                     </div>
                 </div>

@@ -7,48 +7,61 @@ const { DateTime } = require('luxon');
 const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
 
 const registrarPago = async (datosPago) => {
-    const { cliente_id, monto, metodo_pago, cantidad_meses, reiniciar_ciclo } = datosPago;
+    // 1. Recibimos 'fecha_inicio_personalizada' en lugar de reiniciar_ciclo
+    const { cliente_id, monto, metodo_pago, cantidad_meses, fecha_inicio_personalizada } = datosPago;
 
     const cliente = await Cliente.findByPk(cliente_id);
     if (!cliente) {
         throw new Error("CLIENTE_NO_ENCONTRADO");
     }
 
-    // 1. OBTENER FECHA ACTUAL (Reloj de Argentina)
+    // 2. FECHA ACTUAL (Reloj de Argentina)
     const ahoraArgentina = DateTime.now().setZone(ZONA_HORARIA);
-
     const fechaParaGuardar = ahoraArgentina.toFormat('yyyy-MM-dd HH:mm:ss');
     
-    // 3. CÁLCULO DE FECHAS DE COBERTURA
+    // 3. CÁLCULO DE FECHA DE INICIO
     let fechaInicioObj; 
 
-    if (reiniciar_ciclo === true) {
-        fechaInicioObj = ahoraArgentina;
+    if (fecha_inicio_personalizada) {
+        // CASO A: El Profe eligió una fecha manual (Ej: Lunes pasado)
+        // Usamos esa fecha como el inicio absoluto, ignorando vencimientos previos.
+        // Asumimos que viene formato 'YYYY-MM-DD'
+        fechaInicioObj = DateTime.fromISO(fecha_inicio_personalizada, { zone: ZONA_HORARIA });
     } else {
+        // CASO B: Automático (Lógica original)
         if (!cliente.fecha_vencimiento) {
             fechaInicioObj = ahoraArgentina;
         } else {
-            // Leemos la fecha de la DB y la interpretamos como Argentina
-            // (Usamos toISODate para evitar problemas de horas en fechas viejas)
             const fechaStr = new Date(cliente.fecha_vencimiento).toISOString().split('T')[0];
             const vencimientoActual = DateTime.fromISO(fechaStr, { zone: ZONA_HORARIA });
             
-            fechaInicioObj = vencimientoActual.isValid ? vencimientoActual : ahoraArgentina;
+            // Si el vencimiento es futuro, empalmamos. Si ya pasó, arrancamos hoy.
+            fechaInicioObj = vencimientoActual > ahoraArgentina ? vencimientoActual : ahoraArgentina;
         }
     }
 
-    // Sumar meses (Luxon maneja bien los bisiestos y finales de mes)
-    const fechaFinObj = fechaInicioObj.plus({ months: parseInt(cantidad_meses) });
+    // 4. CÁLCULO DE FECHA DE FIN (VENCIMIENTO)
+    let fechaFinObj;
+    const mesesInt = parseInt(cantidad_meses);
 
-    // 4. OPERACIONES EN BASE DE DATOS
+    if (mesesInt === 0) {
+        // NUEVA LÓGICA: PASE DIARIO
+        // Si son 0 meses, damos 1 día de cobertura (vence mañana a la misma hora/fecha)
+        fechaFinObj = fechaInicioObj.plus({ days: 1 });
+    } else {
+        // LÓGICA NORMAL: PASE MENSUAL
+        fechaFinObj = fechaInicioObj.plus({ months: mesesInt });
+    }
+
+    // 5. OPERACIONES EN BASE DE DATOS
     const nuevoPago = await Pago.create({
         cliente_id,
         monto,
         metodo_pago,
-        cantidad_meses,
-        fecha_pago: fechaParaGuardar, // <--- Aquí va la fecha "visual" corregida
-        fecha_inicio_cobertura: fechaInicioObj.toISODate(), // Mandamos solo string YYYY-MM-DD
-        fecha_fin_cobertura: fechaFinObj.toISODate()        // Mandamos solo string YYYY-MM-DD
+        cantidad_meses: mesesInt,
+        fecha_pago: fechaParaGuardar, // Fecha real de cuando entró la plata
+        fecha_inicio_cobertura: fechaInicioObj.toISODate(), 
+        fecha_fin_cobertura: fechaFinObj.toISODate()        
     });
 
     await cliente.update({

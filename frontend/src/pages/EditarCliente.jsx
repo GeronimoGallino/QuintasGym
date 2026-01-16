@@ -187,7 +187,7 @@ const EditarCliente = () => {
 
         {/* Fecha Nacimiento */}
         <FormInput 
-            label="Fecha de Nacimiento" name="fecha_nacimiento" type="date"
+            label="Fecha de Nacimiento" name="fecha_nacimiento" type="date" required
             value={formData.fecha_nacimiento} onChange={handleChange}
             style={{ colorScheme: 'dark' }}
         />

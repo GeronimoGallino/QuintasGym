@@ -142,7 +142,7 @@ const NuevoCliente = () => {
         />
 
         <FormInput 
-          label="Fecha de Nacimiento" name="fecha_nacimiento" type="date" 
+          label="Fecha de Nacimiento" name="fecha_nacimiento" type="date" required 
           style={{ colorScheme: 'dark' }}
           value={datos.fecha_nacimiento} onChange={handleChange} 
         />

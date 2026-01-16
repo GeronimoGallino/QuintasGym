@@ -70,7 +70,10 @@ const Pagos = () => {
                             + ${pago.monto}
                         </span>
                         <span className="text-orange-200 text-xs font-medium">
-                            {pago.cantidad_meses} {pago.cantidad_meses === 1 ? 'Mes' : 'Meses'}
+                            {pago.cantidad_meses === 0 
+                                ? '1 Día' 
+                                : `${pago.cantidad_meses} ${pago.cantidad_meses === 1 ? 'Mes' : 'Meses'}`
+                            }
                         </span>
                     </div>
                 </div>
