@@ -1,12 +1,10 @@
 // src/services/api.js
 import axios from 'axios';
+// BORRA ESTA LÍNEA: import { authService } from './auth.service'; <--- CAUSA EL BLOQUEO
 
-// LÓGICA INTELIGENTE:
-// 1. Si existe una variable de entorno (Render), úsala.
-// 2. Si no, usa localhost (Tu PC).
 const API_URL = import.meta.env.VITE_API_URL 
-    ? `${import.meta.env.VITE_API_URL}/api` // En Render
-    : 'http://192.168.1.16:3000/api';          // En tu casa
+    ? `${import.meta.env.VITE_API_URL}/api`
+    : 'http://192.168.1.16:3000/api'; // O tu IP local
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -14,3 +12,29 @@ export const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+api.interceptors.request.use(
+  (config) => {
+    // LEEMOS EL TOKEN DIRECTAMENTE DEL NAVEGADOR (Para no depender de authService)
+    const token = localStorage.getItem('token'); 
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // SI EL TOKEN VENCIÓ, LIMPIAMOS A MANO
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);

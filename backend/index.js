@@ -2,11 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const sequelize = require('./db'); 
 
+//seguridad
+const authController = require('./controllers/authController');
+const verifyToken = require('./middlewares/authMiddleware');
+
+
 // IMPORTAR RUTAS
 const clientesRoutes = require('./routes/clientes'); 
 const pagosRoutes = require('./routes/pagos');
 
-const app = express();
+const app = express();  
 const port = process.env.PORT || 3000;
 
 // --- CONFIGURACIÓN DE CORS (SEGURIDAD) ---
@@ -41,8 +46,11 @@ app.use(cors({
 app.use(express.json());
 
 // USAR RUTAS
-app.use('/api/clientes', clientesRoutes);
-app.use('/api/pagos', pagosRoutes);
+app.use('/api/clientes',verifyToken, clientesRoutes);
+app.use('/api/pagos',verifyToken, pagosRoutes);
+
+// Rutas Públicas
+app.post('/api/login', authController.login);
 
 // RUTA DE PRUEBA
 app.get('/', (req, res) => {

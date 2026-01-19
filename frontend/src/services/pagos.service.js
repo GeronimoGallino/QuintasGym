@@ -1,3 +1,5 @@
+// src/services/pagos.service.js
+
 import { api } from './api';
 
 export const pagosService = {
