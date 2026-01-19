@@ -13,17 +13,21 @@ export const api = axios.create({
   },
 });
 
-api.interceptors.request.use(
-  (config) => {
-    // LEEMOS EL TOKEN DIRECTAMENTE DEL NAVEGADOR (Para no depender de authService)
-    const token = localStorage.getItem('token'); 
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Verificamos si la URL de la petición NO era la de login
+    // Para no expulsar al usuario si se equivoca la contraseña al entrar
+    const isLoginRequest = error.config && error.config.url.includes('/login');
+
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
+      // SOLO si NO es login, cerramos sesión y redirigimos
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      window.location.href = '/login';
     }
-    return config;
-  },
-  (error) => Promise.reject(error)
+    return Promise.reject(error);
+  }
 );
 
 api.interceptors.response.use(
