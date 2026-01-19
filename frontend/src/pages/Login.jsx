@@ -35,10 +35,13 @@ const Login = () => {
     try {
       await login(credenciales.username, credenciales.password);
       navigate('/'); // Redirigir al Dashboard si sale bien
-    } catch (err) {
-      setError(err.message || 'Credenciales inválidas');
-      setLoading(false);
-    }
+  } catch (err) {
+    // CAMBIO: Intentamos leer el mensaje específico del backend primero
+    const mensajeError = err.response?.data?.message || err.message || 'Error desconocido';
+    
+    setError(mensajeError);
+    setLoading(false);
+  }
   };
 
   return (
