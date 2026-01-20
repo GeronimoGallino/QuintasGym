@@ -92,8 +92,58 @@ const obtenerTodos = async () => {
     });
 };
 
+const eliminarPago = async (id) => {
+    // 1. Buscamos el pago que queremos borrar
+    const pagoAeliminar = await Pago.findByPk(id, {
+        include: { model: Cliente }
+    });
+
+    if (!pagoAeliminar) {
+        throw new Error("PAGO_NO_ENCONTRADO");
+    }
+
+    // =====================================================================
+    // 🛡️ REGLA DE SEGURIDAD: SOLO EL ÚLTIMO PAGO DEL CLIENTE
+    // =====================================================================
+    
+    // Buscamos cuál es el pago más reciente registrado para ESTE cliente
+    const ultimoPagoReal = await Pago.findOne({
+        where: { cliente_id: pagoAeliminar.cliente_id },
+        order: [['id', 'DESC']] // Ordenamos por ID descendente (el más nuevo primero)
+    });
+
+    // Si el ID del pago que queremos borrar NO ES el del último pago...
+    if (ultimoPagoReal && ultimoPagoReal.id !== pagoAeliminar.id) {
+        throw new Error("NO_ES_ULTIMO_PAGO");
+    }
+    // =====================================================================
+
+
+    const cliente = pagoAeliminar.Cliente;
+
+    // LÓGICA DE ROLLBACK (Ahora es 100% segura porque sabemos que es el último)
+    if (cliente && cliente.fecha_vencimiento && pagoAeliminar.fecha_fin_cobertura) {
+        
+        const vencimientoCliente = new Date(cliente.fecha_vencimiento).toISOString().split('T')[0];
+        const finCoberturaPago = new Date(pagoAeliminar.fecha_fin_cobertura).toISOString().split('T')[0];
+
+        // Al ser el último pago, esto casi siempre va a coincidir
+        if (vencimientoCliente === finCoberturaPago) {
+            await cliente.update({
+                fecha_vencimiento: pagoAeliminar.fecha_inicio_cobertura
+            });
+        }
+    }
+
+    // 3. Eliminamos
+    await pagoAeliminar.destroy();
+    
+    return { message: "Pago eliminado correctamente" };
+};
+
 module.exports = {
     registrarPago,
     obtenerHistorial,
-    obtenerTodos
+    obtenerTodos,
+    eliminarPago
 };

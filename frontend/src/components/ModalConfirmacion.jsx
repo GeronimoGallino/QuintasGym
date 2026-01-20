@@ -6,19 +6,25 @@ const ModalConfirmacion = ({
     onConfirm, 
     titulo, 
     mensaje,
-    textoConfirmar = "Sí, Eliminar", // Texto por defecto
-    colorBoton = "bg-red-600"        // Color por defecto (Rojo)
+    textoConfirmar = "Sí, Eliminar",
+    colorBoton = "bg-red-600",
+    procesando = false // <--- 1. NUEVA PROP
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-70 z-[60] flex items-center justify-center p-4">
       <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 max-w-sm w-full p-6 transform transition-all scale-100">
         
         {/* Icono */}
         <div className="flex justify-center mb-4">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center ${colorBoton} bg-opacity-20`}>
-                <span className="text-3xl">⚠️</span>
+                {/* Si está procesando mostramos un spinner simple, sino el icono de alerta */}
+                {procesando ? (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                ) : (
+                    <span className="text-3xl">⚠️</span>
+                )}
             </div>
         </div>
 
@@ -34,17 +40,19 @@ const ModalConfirmacion = ({
         <div className="flex gap-3">
             <button 
                 onClick={onClose}
-                className="flex-1 bg-gray-700 text-white py-3 rounded-xl font-bold active:scale-95 transition-transform"
+                disabled={procesando} // <--- Deshabilitar cancelar si está borrando
+                className="flex-1 bg-gray-700 text-white py-3 rounded-xl font-bold active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 Cancelar
             </button>
             
             <button 
                 onClick={onConfirm}
-                // Aquí usamos las variables dinámicas para el color y el texto
-                className={`flex-1 ${colorBoton} text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform`}
+                disabled={procesando} // <--- 2. BLOQUEAR BOTÓN
+                className={`flex-1 ${colorBoton} text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2`}
             >
-                {textoConfirmar}
+                {/* 3. CAMBIAR TEXTO */}
+                {procesando ? 'Eliminando...' : textoConfirmar}
             </button>
         </div>
 

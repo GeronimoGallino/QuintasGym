@@ -38,8 +38,34 @@ const listarTodos = async (req, res) => {
     }
 };
 
+const borrarPago = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pagosService.eliminarPago(id);
+        res.json({ message: "Pago eliminado con éxito" });
+
+    } catch (err) {
+        console.error(err);
+        
+        if (err.message === "PAGO_NO_ENCONTRADO") {
+            return res.status(404).json({ message: "El pago no existe" });
+        }
+
+        // 👇 NUEVA RESPUESTA PARA LA REGLA DE SEGURIDAD
+        if (err.message === "NO_ES_ULTIMO_PAGO") {
+            return res.status(400).json({ 
+                message: "Por seguridad, solo puedes eliminar el último pago realizado por este cliente." 
+            });
+        }
+        
+        // Nota: Cambié .send por .json({message: ...}) para que tu frontend lo lea mejor
+        res.status(500).json({ message: "Error del servidor al eliminar pago" });
+    }
+};
+
 module.exports = {
     crearPago,
     listarPorCliente,
-    listarTodos
+    listarTodos,
+    borrarPago
 };

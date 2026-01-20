@@ -7,5 +7,6 @@ const pagosController = require('../controllers/pagosController');
 router.post('/', pagosController.crearPago);
 router.get('/cliente/:id', pagosController.listarPorCliente);
 router.get('/', pagosController.listarTodos);
+router.delete('/:id', pagosController.borrarPago);
 
 module.exports = router;

@@ -36,5 +36,15 @@ export const pagosService = {
       console.error("Error al obtener pagos:", error);
       throw error;
     }
+  },
+
+  delete: async (id) => {
+    try {
+      const response = await api.delete(`/pagos/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error al eliminar pago:", error);
+      throw error;
+    }
   }
 };
