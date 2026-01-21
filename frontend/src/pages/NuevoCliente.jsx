@@ -17,7 +17,7 @@ const FormInput = ({ label, ...props }) => (
   </div>
 );
 
-// 2. UI COMPONENT: SELECT PRO (Para que coincida con el Input)
+// 2. UI COMPONENT: SELECT PRO
 const FormSelect = ({ label, children, ...props }) => (
   <div className="group">
     <label className="block text-gray-400 text-sm font-medium mb-2 ml-1 transition-colors group-focus-within:text-blue-400">
@@ -30,7 +30,6 @@ const FormSelect = ({ label, children, ...props }) => (
         >
             {children}
         </select>
-        {/* Icono de flecha custom para reemplazar el nativo feo */}
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
           <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
         </div>
@@ -46,6 +45,9 @@ const NuevoCliente = () => {
     fecha_nacimiento: '', sexo: 'M', mail: ''
   });
 
+  // NUEVO ESTADO: CARGA
+  const [enviando, setEnviando] = useState(false);
+
   const [modalConflict, setModalConflict] = useState({ isOpen: false, data: null, type: null });
   const [modalSuccess, setModalSuccess] = useState({ isOpen: false, message: '', idCliente: null });
 
@@ -58,12 +60,26 @@ const NuevoCliente = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // BLOQUEO SI YA SE ESTÁ ENVIANDO
+    if (enviando) return;
+    setEnviando(true);
+
     try {
       const respuesta = await clientesService.create(datos);
+      
+      // Si hay conflicto (ya existe), liberamos el botón para que el usuario pueda corregir o decidir
+      if (respuesta.tipo !== 'CREADO') {
+        setEnviando(false);
+      }
+      // Si fue CREADO, dejamos el botón bloqueado (enviando=true) para que no aprete de nuevo mientras sale el modal
+
       procesarRespuesta(respuesta);
+
     } catch (error) {
       console.error(error);
       alert('Error de conexión.');
+      setEnviando(false); // Liberamos botón en caso de error
     }
   };
 
@@ -91,10 +107,8 @@ const NuevoCliente = () => {
   };
 
   return (
-    // CONTENEDOR CENTRALIZADO
     <div className="p-6 flex flex-col gap-6 text-white pb-20 max-w-2xl mx-auto w-full">
       
-      {/* Header con botón atrás más sutil */}
       <div className="flex items-center gap-4 mb-4">
         <button onClick={() => navigate('/clientes')} className="bg-gray-800 hover:bg-gray-700 text-gray-300 p-3 rounded-full active:scale-95 transition-all">
             ⬅️
@@ -109,16 +123,19 @@ const NuevoCliente = () => {
         <FormInput 
           label="Nombre Completo *" name="nombre_completo" required placeholder="Ej: Lionel Messi"
           value={datos.nombre_completo} onChange={handleChange} 
+          disabled={enviando}
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormInput 
               label="DNI *" name="dni" type="tel" required maxLength={10} placeholder="Sin puntos"
               value={datos.dni} onChange={handleChange} 
+              disabled={enviando}
             />
             <FormSelect 
                 label="Sexo *" name="sexo" required 
                 value={datos.sexo} onChange={handleChange}
+                disabled={enviando}
             >
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
@@ -128,35 +145,43 @@ const NuevoCliente = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormInput 
               label="Teléfono" name="telefono" type="tel" placeholder="Opcional"
-              value={datos.telefono} onChange={handleChange} 
+              value={datos.telefono} onChange={handleChange}
+              disabled={enviando}
             />
              <FormInput 
               label="Email" name="mail" type="email" placeholder="cliente@email.com"
               value={datos.mail} onChange={handleChange} 
+              disabled={enviando}
             />
         </div>
 
         <FormInput 
           label="Dirección" name="direccion" placeholder="Calle, Altura, Barrio"
-          value={datos.direccion} onChange={handleChange} 
+          value={datos.direccion} onChange={handleChange}
+          disabled={enviando}
         />
 
         <FormInput 
           label="Fecha de Nacimiento" name="fecha_nacimiento" type="date" required 
           style={{ colorScheme: 'dark' }}
           value={datos.fecha_nacimiento} onChange={handleChange} 
+          disabled={enviando}
         />
 
-        {/* BOTÓN CON ESTILO GLOW */}
+        {/* BOTÓN ACTUALIZADO CON ESTADO DE CARGA */}
         <button 
           type="submit" 
-          className="mt-6 w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-lg tracking-wide py-4 px-6 rounded-xl shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] transform active:scale-[0.98] transition-all duration-200"
+          disabled={enviando}
+          className={`mt-6 w-full text-white font-bold text-lg tracking-wide py-4 px-6 rounded-xl shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] transition-all duration-200
+            ${enviando 
+                ? 'bg-blue-800 opacity-60 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] transform active:scale-[0.98]'
+            }`}
         >
-          GUARDAR CLIENTE
+          {enviando ? 'PROCESANDO...' : 'GUARDAR CLIENTE'}
         </button>
       </form>
 
-      {/* MODALES (Sin cambios lógicos, solo visualización) */}
       <ModalConfirmacion 
         isOpen={modalConflict.isOpen}
         onClose={() => setModalConflict({ ...modalConflict, isOpen: false })}

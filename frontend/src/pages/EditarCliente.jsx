@@ -4,7 +4,7 @@ import { clientesService } from '../services/clientes.service';
 import ModalExito from '../components/ModalExito';
 import ModalConfirmacion from '../components/ModalConfirmacion'; 
 
-// 1. UI COMPONENT: INPUT PRO (Copiado de NuevoCliente)
+// 1. UI COMPONENT: INPUT PRO
 const FormInput = ({ label, ...props }) => (
   <div className="group">
     <label className="block text-gray-400 text-sm font-medium mb-2 ml-1 transition-colors group-focus-within:text-blue-400">
@@ -17,7 +17,7 @@ const FormInput = ({ label, ...props }) => (
   </div>
 );
 
-// 2. UI COMPONENT: SELECT PRO (Copiado de NuevoCliente)
+// 2. UI COMPONENT: SELECT PRO
 const FormSelect = ({ label, children, ...props }) => (
   <div className="group">
     <label className="block text-gray-400 text-sm font-medium mb-2 ml-1 transition-colors group-focus-within:text-blue-400">
@@ -30,7 +30,6 @@ const FormSelect = ({ label, children, ...props }) => (
         >
             {children}
         </select>
-        {/* Icono de flecha custom */}
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
           <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
         </div>
@@ -42,6 +41,9 @@ const EditarCliente = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+
+  // NUEVO ESTADO: CARGA AL GUARDAR
+  const [enviando, setEnviando] = useState(false);
 
   // Estado para el formulario
   const [formData, setFormData] = useState({
@@ -56,7 +58,6 @@ const EditarCliente = () => {
     colorBoton: '', accionConfirmar: () => {} 
   });
 
-  // Cargar datos actuales
   useEffect(() => {
     const cargarDatos = async () => {
       try {
@@ -95,13 +96,17 @@ const EditarCliente = () => {
     }
   };
 
-  // LOGICA DE GUARDADO (Idéntica a la que ya teníamos)
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // BLOQUEO ANTIDOBLE CLICK
+    if (enviando) return;
+    setEnviando(true);
+
     try {
       const respuesta = await clientesService.update(id, formData);
       
-      // CASO DUPLICADO
+      // CASO DUPLICADO (CONFLICTO)
       if (respuesta.tipo === 'YA_EXISTE') {
         setModalConfig({
             isOpen: true,
@@ -111,15 +116,18 @@ const EditarCliente = () => {
             colorBoton: 'bg-red-600',
             accionConfirmar: () => setModalConfig({ ...modalConfig, isOpen: false })
         });
+        setEnviando(false); // Liberamos botón para que corrija
         return;
       }
 
       // CASO ÉXITO
+      // Mantenemos botón bloqueado (enviando=true) mientras se muestra el modal y redirige
       setShowExito(true);
 
     } catch (error) {
       console.error(error);
       alert('Error al guardar los cambios.');
+      setEnviando(false); // Liberamos botón si hay error
     }
   };
 
@@ -131,10 +139,8 @@ const EditarCliente = () => {
   if (loading) return <div className="text-white text-center mt-10">Cargando formulario...</div>;
 
   return (
-    // CONTENEDOR CENTRALIZADO (Estilo Pro)
     <div className="p-6 flex flex-col gap-6 text-white pb-20 max-w-2xl mx-auto w-full">
       
-      {/* Header Estilizado */}
       <div className="flex items-center gap-4 mb-4">
         <button onClick={() => navigate(-1)} className="bg-gray-800 hover:bg-gray-700 text-gray-300 p-3 rounded-full active:scale-95 transition-all">
             ⬅️
@@ -146,63 +152,69 @@ const EditarCliente = () => {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         
-        {/* Nombre */}
         <FormInput 
             label="Nombre Completo" name="nombre_completo" required
             value={formData.nombre_completo} onChange={handleChange}
+            disabled={enviando}
         />
 
-        {/* Grid: DNI y Sexo */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormInput 
                 label="DNI" name="dni" type="tel" required maxLength={10}
                 value={formData.dni} onChange={handleChange}
+                disabled={enviando}
             />
             <FormSelect 
                 label="Sexo" name="sexo" 
                 value={formData.sexo} onChange={handleChange}
+                disabled={enviando}
             >
                 <option value="M">Masculino</option>
                 <option value="F">Femenino</option>
             </FormSelect>
         </div>
 
-        {/* Grid: Teléfono y Email */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormInput 
                 label="Teléfono" name="telefono" type="tel"
                 value={formData.telefono} onChange={handleChange}
+                disabled={enviando}
             />
             <FormInput 
                 label="Email" name="mail" type="email"
                 value={formData.mail} onChange={handleChange}
+                disabled={enviando}
             />
         </div>
 
-        {/* Dirección */}
         <FormInput 
             label="Dirección" name="direccion"
             value={formData.direccion} onChange={handleChange}
+            disabled={enviando}
         />
 
-        {/* Fecha Nacimiento */}
         <FormInput 
             label="Fecha de Nacimiento" name="fecha_nacimiento" type="date" required
             value={formData.fecha_nacimiento} onChange={handleChange}
             style={{ colorScheme: 'dark' }}
+            disabled={enviando}
         />
 
-        {/* BOTÓN CON ESTILO GLOW */}
+        {/* BOTÓN ACTUALIZADO CON ESTADO DE CARGA */}
         <button 
             type="submit"
-            className="mt-6 w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold text-lg tracking-wide py-4 px-6 rounded-xl shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] transform active:scale-[0.98] transition-all duration-200"
+            disabled={enviando}
+            className={`mt-6 w-full text-white font-bold text-lg tracking-wide py-4 px-6 rounded-xl shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] transition-all duration-200 
+            ${enviando 
+                ? 'bg-blue-800 opacity-60 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] transform active:scale-[0.98]'
+            }`}
         >
-            GUARDAR CAMBIOS
+            {enviando ? 'PROCESANDO...' : 'GUARDAR CAMBIOS'}
         </button>
 
       </form>
 
-      {/* Modal Error / Duplicado */}
       <ModalConfirmacion 
         isOpen={modalConfig.isOpen}
         onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
@@ -216,7 +228,6 @@ const EditarCliente = () => {
         colorBoton={modalConfig.colorBoton}
       />
 
-      {/* Modal Éxito */}
       <ModalExito 
         isOpen={showExito}
         onClose={finalizarEdicion} 
